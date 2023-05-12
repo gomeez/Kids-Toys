@@ -1,0 +1,201 @@
+//HC-SR04 Ultrasonic Distance Sensor with 7 Segment Display
+
+#include <SevSeg.h>
+
+#define TRIG_PIN A3
+#define ECHO_PIN A4
+
+SevSeg sevseg;
+
+uint16_t duration = 0;
+uint32_t interval = 0;
+float distance = 100;
+
+uint32_t interval2 = 100;
+
+//renaming interfaces
+#define ENA 10
+#define ENB 11
+
+
+#define IN1 4
+#define IN2 5
+#define IN3 6
+#define IN4 7
+
+//Place the motor interface facing uowards
+//L298P the out from left to right is 1 2 3 4
+
+//defing infrared sensor input interface
+//the left sensor infrared input port is A1,the right sensor infrared input port is A2 
+//when receiving the reflected signal,the output is at a low level;
+//when the reflected signal is not received,the output is at a high level;
+#define L_SENSE A1
+#define R_SENSE A2
+
+#define PLUSENH 100
+#define PLUSENL 50
+int L=0;
+int R=0;
+
+
+
+// define run output
+void start_run()     
+{
+   //start run 
+  analogWrite(ENA,100);
+  analogWrite(ENB,100);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void stop_run()
+{
+  //stop
+  analogWrite(ENA,0);
+  analogWrite(ENB,0);
+
+  digitalWrite(IN1,LOW);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,LOW);
+  digitalWrite(IN4,LOW);
+}
+
+void direct_run()
+{
+  //straight travel
+  analogWrite(ENA,95);
+  analogWrite(ENB,90);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void left_run()
+{
+  //turn left
+  analogWrite(ENA,60);
+  analogWrite(ENB,73);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void right_run()
+{
+  //turn right 
+  analogWrite(ENA,75);
+  analogWrite(ENB,45);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void right_run_q()
+{
+  //turn right 90 degrees
+  analogWrite(ENA,98);
+  analogWrite(ENB,5);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+
+void setup()
+{
+  //define the usage mode of ultrasonic sensor pins
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  //set motor pin mode
+  //initialize interface mode to output
+  pinMode(ENA,OUTPUT);
+  pinMode(ENB,OUTPUT);
+  pinMode(IN1,OUTPUT);
+  pinMode(IN2,OUTPUT);
+  pinMode(IN3,OUTPUT);
+  pinMode(IN4,OUTPUT);
+  
+  //define infrared interface mode as input
+  pinMode(L_SENSE, INPUT);
+  pinMode(L_SENSE, INPUT);
+
+
+}
+
+void loop()
+{
+    static int timecnt=0;
+    if ((millis() - interval) >= 100) 
+    {
+        interval = millis();
+    
+        digitalWrite(TRIG_PIN, LOW);
+        delayMicroseconds(5);
+        digitalWrite(TRIG_PIN, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(TRIG_PIN, LOW);
+    
+        // Read time of the trig and echo pins
+        duration = pulseIn(ECHO_PIN, HIGH);
+    
+        // Calculates the distance
+        distance = (duration / 2) / 29;
+        timecnt++;
+    }
+
+ //read the left and right sensor signals separately
+  L=digitalRead(L_SENSE);
+  R=digitalRead(R_SENSE);
+
+  
+  //when the ultrasonic detection distance is less than 20,turn right 90 degrees
+  if(distance<20)
+  {
+    right_run_q();
+    timecnt=0;
+  }
+  else
+  {
+    if(timecnt <3)
+    {
+        right_run_q();
+    }
+    else if(timecnt >3 && timecnt <13 )
+    {
+      start_run();
+    }
+    else
+    {
+       timecnt=13;
+      //when both left and right sensors are outside the track,stop
+      if(L==LOW&&R==LOW)
+      {
+        stop_run();
+      }else if(L==LOW&&R==HIGH)//when right is out track,turn left
+      {
+        right_run();
+      }else if(L==HIGH&&R==LOW)//when left is out track,turn right
+      {
+        left_run();
+      }else
+      {
+        direct_run();//go straight when both sides are in the track  
+      } 
+    }
+  }
+  
+}
+
