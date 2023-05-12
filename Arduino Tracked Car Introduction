@@ -1,0 +1,552 @@
+Arduino Tracked Car
+
+Project introduction: This project aims to design an Arduino-based tracked car that can travel along a black track and complete a 90-degree turn. It uses infrared sensors to detect the track and travel along it, and can complete a 90-degree turn when the ultrasonic radar detects a turn signal ahead, and then continue to travel along the track.
+
+Hardware components:
+1.	Arduino main board: used to control the movement of the car and process sensor data.
+2.	Two DC reduction motors: used to drive the wheels of the car, enabling it to move forward, backward, and turn.
+3.	Ultrasonic sensor module: used to detect the distance of obstacles ahead.
+4.	Infrared sensor module: used to detect the black track and determine the car's position and direction.
+
+Software implementation:
+1.	Initialization: Connect the Arduino main board to various sensors and motors. Set input and output pins.
+2.	Tracking: Use the infrared sensor module to detect the black track. Determine the car's position and direction based on the sensor readings.
+3.	Obstacle detection: Use the ultrasonic sensor module to detect the distance of obstacles ahead, and judge when the obstacle is less than 20cm away, the car completes a 90-degree right turn, and then continues to move forward.
+
+Materials required:
+	Arduino main board
+	Motor driver board: L298N
+	DC reduction motor
+	Ultrasonic module
+	Infrared sensor module (for tracking)
+	Breadboard
+	DuPont wire
+	Battery power supply
+
+Experimental steps:
+1.	Connect the circuit: 
+	Connect the Arduino main board, motor driver board, and DC reduction motor according to the following circuit:
+
+	Connect the infrared sensor module to the front panel of the Arduino main board car.
+
+	Connect the ultrasonic sensor module to the front panel of the Arduino main board car.
+
+
+2.	Development code:
+#include <SevSeg.h>
+
+#define TRIG_PIN A3
+#define ECHO_PIN A4
+
+SevSeg sevseg;
+
+uint16_t duration = 0;
+uint32_t interval = 0;
+float distance = 100;
+
+uint32_t interval2 = 100;
+
+#define IN1 4
+#define IN2 5
+#define IN3 6
+#define IN4 7
+
+#define L_SENSE A1
+#define R_SENSE A2
+
+#define PLUSENH 100
+#define PLUSENL 80
+int L=0;
+int R=0;
+
+void start_run()     
+{
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void stop_run()
+{
+  digitalWrite(IN1,LOW);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,LOW);
+  digitalWrite(IN4,LOW);
+}
+
+void direct_run()
+{
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void left_run()
+{
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void right_run()
+{
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void right_run_q()
+{
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void setup()
+{
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  pinMode(IN1,OUTPUT);
+  pinMode(IN2,OUTPUT);
+  pinMode(IN3,OUTPUT);
+  pinMode(IN4,OUTPUT);
+  
+  pinMode(L_SENSE, INPUT);
+  pinMode(L_SENSE, INPUT);
+}
+void loop()
+{
+    if ((millis() - interval) >= 100) 
+    {
+        interval = millis();
+    
+        digitalWrite(TRIG_PIN, LOW);
+        delayMicroseconds(5);
+        digitalWrite(TRIG_PIN, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(TRIG_PIN, LOW);
+    
+        // Read time of the trig and echo pins
+        duration = pulseIn(ECHO_PIN, HIGH);
+        // Calculates the distance
+        distance = (duration / 2) / 29;
+    }
+  L=digitalRead(L_SENSE);
+  R=digitalRead(R_SENSE);
+
+  if(distance<10)
+  {
+    right_run_q();
+  }
+  else
+  {
+      if(L==LOW&&R==LOW)
+      {
+        stop_run();
+      }else if(L==LOW&&R==HIGH)
+      {
+        right_run();
+      }else if(L==HIGH&&R==LOW)
+      {
+        left_run();
+      }else
+      {
+        direct_run();
+      } 
+  }
+}
+Result:
+After running the program, it was found that the car was moving too fast and the two infrared sensors were easily getting out of range, causing the car to be uncontrollable. The experiment failed.
+After multiple experiments and analysis, it was determined that reducing the speed of the car is the key to controlling the car's trajectory. Research showed that the L298N motor driver has the function of adjusting the speed, and by changing the motor power control from level control to PWM pulse control, it is possible to adjust the output voltage and achieve speed control.
+The analogWrite(PIN_NUM,DATA%) function can be used to achieve analog voltage adjustment of the output.
+
+Modify Code:
+#include <SevSeg.h>
+
+#define TRIG_PIN A3
+#define ECHO_PIN A4
+
+SevSeg sevseg;
+
+uint16_t duration = 0;
+uint32_t interval = 0;
+float distance = 100;
+
+uint32_t interval2 = 100;
+
+#define ENA 10
+#define ENB 11
+
+#define IN1 4
+#define IN2 5
+#define IN3 6
+#define IN4 7
+
+#define L_SENSE A1
+#define R_SENSE A2
+
+#define PLUSENH 100
+#define PLUSENL 80
+int L=0;
+int R=0;
+
+void start_run()     
+{
+  analogWrite(ENA,100);
+  analogWrite(ENB,100);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void stop_run()
+{
+  analogWrite(ENA,0);
+  analogWrite(ENB,0);
+
+  digitalWrite(IN1,LOW);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,LOW);
+  digitalWrite(IN4,LOW);
+}
+
+void direct_run()
+{
+  analogWrite(ENA,100);
+  analogWrite(ENB,100);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void left_run()
+{
+  analogWrite(ENA,100);
+  analogWrite(ENB,50);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void right_run()
+{
+  analogWrite(ENA,50);
+  analogWrite(ENB,100);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void right_run_q()
+{
+  analogWrite(ENA,100);
+  analogWrite(ENB,0);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void setup()
+{
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  pinMode(ENA,OUTPUT);
+  pinMode(ENB,OUTPUT);
+  pinMode(IN1,OUTPUT);
+  pinMode(IN2,OUTPUT);
+  pinMode(IN3,OUTPUT);
+  pinMode(IN4,OUTPUT);
+  
+  pinMode(L_SENSE, INPUT);
+  pinMode(L_SENSE, INPUT);
+
+}
+void loop()
+{
+    static int timecnt=0;
+    if ((millis() - interval) >= 100) 
+    {
+        interval = millis();
+    
+        digitalWrite(TRIG_PIN, LOW);
+        delayMicroseconds(5);
+        digitalWrite(TRIG_PIN, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(TRIG_PIN, LOW);
+    
+        // Read time of the trig and echo pins
+        duration = pulseIn(ECHO_PIN, HIGH);
+    
+        // Calculates the distance
+        distance = (duration / 2) / 29;
+        timecnt++;
+    }
+  L=digitalRead(L_SENSE);
+  R=digitalRead(R_SENSE);
+
+  if(distance<10)
+  {
+    right_run_q();
+    timecnt=0;
+  }
+  else
+  {
+    if(timecnt <9)
+    {
+        right_run_q();
+    }
+    else if(timecnt >9 && timecnt <15 )
+    {
+      start_run();
+    }
+    else
+    {
+       timecnt=15;
+      if(L==LOW&&R==LOW)
+      {
+        stop_run();
+      }else if(L==LOW&&R==HIGH)
+      {
+        right_run();
+      }else if(L==HIGH&&R==LOW)
+      {
+        left_run();
+      }else
+      {
+        direct_run();
+      } 
+    }
+  }
+}
+
+After multiple attempts, it was discovered that because the car uses two motors on each side, the motor quality and installation friction coefficient cause inconsistent rotational speed. Therefore, different parameters need to be set for each side of the car to ensure consistent speed. Through experimentation, it was found that giving 70% voltage to the left side and 63% voltage to the right side can keep the car running at the same speed.In addition, when adjusting the direction of the car to the left or right, the rotational speed of the motors on each side also needs to be separately adjusted.
+
+#include <SevSeg.h>
+
+#define TRIG_PIN A3
+#define ECHO_PIN A4
+
+SevSeg sevseg;
+
+uint16_t duration = 0;
+uint32_t interval = 0;
+float distance = 100;
+
+uint32_t interval2 = 100;
+
+#define ENA 10
+#define ENB 11
+
+
+#define IN1 4
+#define IN2 5
+#define IN3 6
+#define IN4 7
+
+#define L_SENSE A1
+#define R_SENSE A2
+
+#define PLUSENH 100
+#define PLUSENL 80
+int L=0;
+int R=0;
+
+void start_run()     
+{
+  analogWrite(ENA,100);
+  analogWrite(ENB,100);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void stop_run()
+{
+  analogWrite(ENA,0);
+  analogWrite(ENB,0);
+
+  digitalWrite(IN1,LOW);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,LOW);
+  digitalWrite(IN4,LOW);
+}
+
+void direct_run()
+{
+  analogWrite(ENA,70);
+  analogWrite(ENB,63);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void left_run()
+{
+  analogWrite(ENA,70);
+  analogWrite(ENB,80);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void right_run()
+{
+  analogWrite(ENA,80);
+  analogWrite(ENB,70);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+void right_run_q()
+{
+  analogWrite(ENA,100);
+  analogWrite(ENB,0);
+
+  digitalWrite(IN1,HIGH);
+  digitalWrite(IN2,LOW);
+  digitalWrite(IN3,HIGH);
+  digitalWrite(IN4,LOW);
+}
+
+void setup()
+{
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  pinMode(ENA,OUTPUT);
+  pinMode(ENB,OUTPUT);
+  pinMode(IN1,OUTPUT);
+  pinMode(IN2,OUTPUT);
+  pinMode(IN3,OUTPUT);
+  pinMode(IN4,OUTPUT);
+  
+  pinMode(L_SENSE, INPUT);
+  pinMode(L_SENSE, INPUT);
+
+}
+
+void loop()
+{
+    if ((millis() - interval) >= 100) 
+    {
+        interval = millis();
+        digitalWrite(TRIG_PIN, LOW);
+        delayMicroseconds(5);
+        digitalWrite(TRIG_PIN, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(TRIG_PIN, LOW);
+    
+        // Read time of the trig and echo pins
+        duration = pulseIn(ECHO_PIN, HIGH);
+    
+        // Calculates the distance
+        distance = (duration / 2) / 29;
+    }
+  L=digitalRead(L_SENSE);
+  R=digitalRead(R_SENSE);
+
+  if(distance<10)
+  {
+    right_run_q();
+  }
+  else
+  {
+      if(L==LOW&&R==LOW)
+      {
+        stop_run();
+      }else if(L==LOW&&R==HIGH)
+      {
+        right_run();
+      }else if(L==HIGH&&R==LOW)
+      {
+        left_run();
+      }else
+      {
+        direct_run();
+      } 
+    
+  }
+}
+
+Finally, under relatively slow speed conditions, the car can correct its course and maintain a straight line through infrared feedback.
+ 
+In the above experiment, there was no turning indicator added to the car, so after the car was running smoothly, we added a function to detect the turning point using an ultrasonic sensor. We placed a turning sign 5 cm before the turning point on the car's trajectory. We observed the car's movement and expected it to turn right and return to the new course. However, after the experiment, we found that the car did turn right at the turning point, but the turning angle was very small and then it stopped running. After multiple experiments and analysis, we found that the black line on the turning point was narrow, and the car lost the trajectory during the turning process, causing it to stop. Therefore, we modified the code to increase the car's turning angle so that the car could return to the track as soon as possible.
+During the turning process, to ensure that the car can turn with a small enough radius, the inner wheel needs to stop rotating and the outer wheel needs to run at maximum speed. However, due to the quality of the deceleration motor, the wheel cannot start normally when the direct_run() function is called again. Therefore, before calling the direct_run() function, we called the start_run() function to give it enough starting voltage to enable it to move properly. The time was obtained by accumulating the delay time in milliseconds.
+
+void loop()
+{
+    static int timecnt=0;
+    if ((millis() - interval) >= 100) 
+    {
+        interval = millis();
+    
+        digitalWrite(TRIG_PIN, LOW);
+        delayMicroseconds(5);
+        digitalWrite(TRIG_PIN, HIGH);
+        delayMicroseconds(10);
+        digitalWrite(TRIG_PIN, LOW);
+    
+        // Read time of the trig and echo pins
+        duration = pulseIn(ECHO_PIN, HIGH);
+    
+        // Calculates the distance
+        distance = (duration / 2) / 29;
+        timecnt++;
+    }
+  L=digitalRead(L_SENSE);
+  R=digitalRead(R_SENSE);
+
+  if(distance<10)
+  {
+    right_run_q();
+    timecnt=0;
+  }
+  else
+  {
+    if(timecnt <9)
+    {
+        right_run_q();
+    }
+    else if(timecnt >9 && timecnt <15 )
+    {
+      start_run();
+    }
+    else
+    {
+       timecnt=15;
+      if(L==LOW&&R==LOW)
+      {
+        stop_run();
+      }else if(L==LOW&&R==HIGH)
+      {
+        right_run();
+      }else if(L==HIGH&&R==LOW)
+      {
+        left_run();
+      }else
+      {
+        direct_run();
+      } 
+    }
+  }
+}
+
+After repeated testing and adjusting various operating parameters, the car was able to turn right when encountering a turning indicator and continue to travel along the predetermined path.
+ 
